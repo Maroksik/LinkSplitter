@@ -28,6 +28,8 @@ function splitLink() {
     generateCSharpCode(parts);
     generateDartCode(parts);
     generateSwiftCode(parts);
+    generateJavaCode(parts);
+    generateKotlinCode(parts);
     
     // Показати результат
     outputSection.style.display = 'block';
@@ -94,26 +96,10 @@ function escapeHtml(text) {
 // Генерація коду для C#
 function generateCSharpCode(parts) {
     let code = '// C# Private Constants\n';
-    code += 'using System;\n\n';
-    code += 'public class UrlConstants\n{\n';
     
     parts.forEach((part, index) => {
-        code += `    private const string Part${index + 1} = "${escapeString(part, 'csharp')}";\n`;
+        code += `private const string part${index + 1} = "${escapeString(part, 'csharp')}";\n`;
     });
-    
-    code += '\n    public static string GetFullUrl()\n    {\n';
-    code += '        return ' + parts.map((_, index) => `Part${index + 1}`).join(' + ') + ';\n';
-    code += '    }\n\n';
-    
-    code += '    // Метод для отримання окремої частини\n';
-    code += '    public static string GetPart(int partNumber)\n    {\n';
-    code += '        return partNumber switch\n        {\n';
-    parts.forEach((_, index) => {
-        code += `            ${index + 1} => Part${index + 1},\n`;
-    });
-    code += '            _ => throw new ArgumentOutOfRangeException(nameof(partNumber))\n';
-    code += '        };\n    }\n';
-    code += '}';
     
     document.getElementById('csharp-code').textContent = code;
 }
@@ -121,30 +107,10 @@ function generateCSharpCode(parts) {
 // Генерація коду для Dart
 function generateDartCode(parts) {
     let code = '// Dart Private Constants\n';
-    code += 'class UrlConstants {\n';
     
     parts.forEach((part, index) => {
-        code += `  static const String _part${index + 1} = '${escapeString(part, 'dart')}';\n`;
+        code += `static const String _part${index + 1} = '${escapeString(part, 'dart')}';\n`;
     });
-    
-    code += '\n  static String getFullUrl() {\n';
-    code += '    return ' + parts.map((_, index) => `_part${index + 1}`).join(' + ') + ';\n';
-    code += '  }\n\n';
-    
-    code += '  // Метод для отримання окремої частини\n';
-    code += '  static String getPart(int partNumber) {\n';
-    code += '    switch (partNumber) {\n';
-    parts.forEach((_, index) => {
-        code += `      case ${index + 1}: return _part${index + 1};\n`;
-    });
-    code += '      default: throw ArgumentError(\'Invalid part number: $partNumber\');\n';
-    code += '    }\n  }\n\n';
-    
-    code += '  // Список всіх частин\n';
-    code += '  static List<String> getAllParts() {\n';
-    code += '    return [' + parts.map((_, index) => `_part${index + 1}`).join(', ') + '];\n';
-    code += '  }\n';
-    code += '}';
     
     document.getElementById('dart-code').textContent = code;
 }
@@ -152,43 +118,46 @@ function generateDartCode(parts) {
 // Генерація коду для Swift
 function generateSwiftCode(parts) {
     let code = '// Swift Private Constants\n';
-    code += 'import Foundation\n\n';
-    code += 'class UrlConstants {\n';
     
     parts.forEach((part, index) => {
-        code += `    private static let part${index + 1} = "${escapeString(part, 'swift')}"\n`;
+        code += `private static let part${index + 1} = "${escapeString(part, 'swift')}"\n`;
     });
-    
-    code += '\n    static func getFullUrl() -> String {\n';
-    code += '        return ' + parts.map((_, index) => `part${index + 1}`).join(' + ') + '\n';
-    code += '    }\n\n';
-    
-    code += '    // Метод для отримання окремої частини\n';
-    code += '    static func getPart(_ partNumber: Int) -> String? {\n';
-    code += '        switch partNumber {\n';
-    parts.forEach((_, index) => {
-        code += `        case ${index + 1}: return part${index + 1}\n`;
-    });
-    code += '        default: return nil\n';
-    code += '        }\n    }\n\n';
-    
-    code += '    // Масив всіх частин\n';
-    code += '    static var allParts: [String] {\n';
-    code += '        return [' + parts.map((_, index) => `part${index + 1}`).join(', ') + ']\n';
-    code += '    }\n';
-    code += '}';
     
     document.getElementById('swift-code').textContent = code;
+}
+
+// Генерація коду для Java
+function generateJavaCode(parts) {
+    let code = '// Java Private Constants\n';
+    
+    parts.forEach((part, index) => {
+        code += `private static final String PART_${index + 1} = "${escapeString(part, 'java')}";\n`;
+    });
+    
+    document.getElementById('java-code').textContent = code;
+}
+
+// Генерація коду для Kotlin
+function generateKotlinCode(parts) {
+    let code = '// Kotlin Private Constants\n';
+    
+    parts.forEach((part, index) => {
+        code += `private const val PART_${index + 1} = "${escapeString(part, 'kotlin')}"\n`;
+    });
+    
+    document.getElementById('kotlin-code').textContent = code;
 }
 
 // Екранування спеціальних символів для різних мов
 function escapeString(str, language) {
     switch(language) {
         case 'csharp':
+        case 'java':
             return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
         case 'dart':
             return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
         case 'swift':
+        case 'kotlin':
             return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
         default:
             return str;
