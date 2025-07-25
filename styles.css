@@ -1,0 +1,278 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    font-weight: 300;
+}
+
+.input-section {
+    margin-bottom: 30px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #555;
+}
+
+input[type="url"] {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+    margin-bottom: 20px;
+}
+
+input[type="url"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.settings {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.settings label {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+select {
+    padding: 10px 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.button-container {
+    text-align: center;
+    margin: 20px 0;
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.output-section {
+    margin-top: 30px;
+}
+
+.language-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tab {
+    padding: 10px 20px;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.tab.active {
+    background: #667eea;
+    color: white;
+}
+
+.tab:hover:not(.active) {
+    background: #e0e0e0;
+}
+
+.code-output {
+    display: none;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 20px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    max-height: 500px;
+    overflow-y: auto;
+    position: relative;
+}
+
+.code-output.active {
+    display: block;
+}
+
+.copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #4CAF50;
+    padding: 5px 15px;
+    font-size: 12px;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.copy-btn:hover {
+    background: #45a049;
+    transform: none;
+    box-shadow: none;
+}
+
+.error {
+    color: #e74c3c;
+    background: #fdf2f2;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid #fecaca;
+    font-weight: 500;
+}
+
+.success {
+    color: #27ae60;
+    background: #f0f9f0;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid #a8e6a8;
+    font-weight: 500;
+}
+
+/* Стилі для відображення частин URL */
+.url-preview {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.url-part {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 5px 0;
+    font-family: monospace;
+    font-size: 13px;
+    word-break: break-all;
+}
+
+.url-part:nth-child(even) {
+    background: #f3e5f5;
+    border-color: #e1bee7;
+}
+
+/* Адаптивний дизайн */
+@media (max-width: 768px) {
+    .container {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    h1 {
+        font-size: 2em;
+    }
+    
+    .language-tabs {
+        justify-content: center;
+    }
+    
+    .settings {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .settings label {
+        margin-bottom: 5px;
+    }
+    
+    select {
+        width: 100%;
+    }
+    
+    .copy-btn {
+        position: static;
+        margin-bottom: 10px;
+        display: block;
+        width: auto;
+    }
+    
+    .code-output {
+        padding-top: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+        margin: 5px;
+    }
+    
+    h1 {
+        font-size: 1.8em;
+    }
+    
+    .language-tabs {
+        flex-direction: column;
+    }
+    
+    .tab {
+        width: 100%;
+        text-align: center;
+    }
+}

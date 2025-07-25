@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Splitter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Link Splitter</h1>
+        
+        <div class="input-section">
+            <label for="urlInput">Вставте посилання:</label>
+            <input type="url" id="urlInput" placeholder="https://example.com/path/to/resource" />
+            
+            <div class="settings">
+                <label for="partsCount">Кількість частин:</label>
+                <select id="partsCount">
+                    <option value="4">4 частини</option>
+                    <option value="6">6 частин</option>
+                    <option value="8" selected>8 частин</option>
+                    <option value="10">10 частин</option>
+                    <option value="12">12 частин</option>
+                    <option value="16">16 частин</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="button-container">
+            <button onclick="splitLink()">Розбити посилання</button>
+        </div>
+        
+        <div class="output-section" id="outputSection" style="display: none;">
+            <div class="language-tabs">
+                <button class="tab active" onclick="showTab('csharp')">C#</button>
+                <button class="tab" onclick="showTab('dart')">Dart</button>
+                <button class="tab" onclick="showTab('swift')">Swift</button>
+            </div>
+            
+            <div id="csharp" class="code-output active">
+                <button class="copy-btn" onclick="copyToClipboard('csharp')">Копіювати</button>
+                <div id="csharp-code"></div>
+            </div>
+            
+            <div id="dart" class="code-output">
+                <button class="copy-btn" onclick="copyToClipboard('dart')">Копіювати</button>
+                <div id="dart-code"></div>
+            </div>
+            
+            <div id="swift" class="code-output">
+                <button class="copy-btn" onclick="copyToClipboard('swift')">Копіювати</button>
+                <div id="swift-code"></div>
+            </div>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
