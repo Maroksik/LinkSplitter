@@ -1,40 +1,82 @@
-// Основна функція для розбиття посилання
-function splitLink() {
-    const url = document.getElementById('urlInput').value.trim();
+// Список випадкових слів для назв змінних
+const randomWords = [
+    'apple', 'banana', 'cherry', 'dragon', 'eagle', 'forest', 'garden', 'honey',
+    'island', 'jungle', 'knight', 'lemon', 'magic', 'noble', 'ocean', 'palace',
+    'queen', 'river', 'stone', 'tower', 'urban', 'voice', 'water', 'xenon',
+    'yellow', 'zebra', 'brave', 'cloud', 'dream', 'flame', 'ghost', 'heart',
+    'input', 'jewel', 'karma', 'light', 'mouse', 'night', 'orbit', 'peace',
+    'quest', 'rapid', 'spark', 'trust', 'unity', 'vivid', 'world', 'youth'
+];
+
+let currentVariableNames = [];
+
+// Генерація унікальних випадкових назв змінних
+function generateRandomVariableNames(count) {
+    const shuffled = [...randomWords].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+}
+
+// Основна функція для розбиття посилань
+function splitLinks() {
+    const urls = [
+        document.getElementById('urlInput1').value.trim(),
+        document.getElementById('urlInput2').value.trim(),
+        document.getElementById('urlInput3').value.trim()
+    ].filter(url => url);
+
     const partsCount = parseInt(document.getElementById('partsCount').value);
     const errorDiv = document.getElementById('error');
     const outputSection = document.getElementById('outputSection');
     
-    // Очистити попередні помилки
     hideError();
     
-    if (!url) {
-        showError('Будь ласка, введіть посилання');
+    if (urls.length === 0) {
+        showError('Будь ласка, введіть хоча б одне посилання');
         return;
     }
     
-    if (!isValidUrl(url)) {
-        showError('Будь ласка, введіть валідне посилання (має починатися з http:// або https://)');
-        return;
+    // Перевірка валідності всіх URL
+    for (let i = 0; i < urls.length; i++) {
+        if (!isValidUrl(urls[i])) {
+            showError(`Посилання ${i + 1} невалідне (має починатися з http:// або https://)`);
+            return;
+        }
     }
     
-    // Розбити URL на частини
-    const parts = splitUrlIntoParts(url, partsCount);
+    // Генеруємо назви змінних
+    const totalParts = urls.length * partsCount;
+    currentVariableNames = generateRandomVariableNames(totalParts);
     
-    // Показати попередній перегляд частин
-    showUrlPreview(parts);
+    // Розбиваємо кожен URL на частини
+    const allParts = [];
+    const urlInfos = [];
     
-    // Генерувати код для кожної мови
-    generateCSharpCode(parts);
-    generateDartCode(parts);
-    generateSwiftCode(parts);
-    generateJavaCode(parts);
-    generateKotlinCode(parts);
+    urls.forEach((url, urlIndex) => {
+        const parts = splitUrlIntoParts(url, partsCount);
+        allParts.push({
+            url: url,
+            urlIndex: urlIndex,
+            parts: parts
+        });
+        
+        urlInfos.push({
+            url: url,
+            parts: parts,
+            startIndex: urlIndex * partsCount
+        });
+    });
     
-    // Показати результат
+    // Показуємо попередній перегляд
+    showUrlPreview(urlInfos);
+    
+    // Генеруємо код для кожної мови
+    generateCSharpCode(allParts);
+    generateDartCode(allParts);
+    generateSwiftCode(allParts);
+    generateJavaCode(allParts);
+    generateKotlinCode(allParts);
+    
     outputSection.style.display = 'block';
-    
-    // Прокрутити до результатів
     outputSection.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -59,7 +101,7 @@ function splitUrlIntoParts(url, partsCount) {
         const end = Math.min(start + partSize, length);
         const part = url.substring(start, end);
         
-        if (part) { // Додаємо тільки непорожні частини
+        if (part) {
             parts.push(part);
         }
     }
@@ -68,20 +110,30 @@ function splitUrlIntoParts(url, partsCount) {
 }
 
 // Показати попередній перегляд частин URL
-function showUrlPreview(parts) {
+function showUrlPreview(urlInfos) {
     const existingPreview = document.querySelector('.url-preview');
     if (existingPreview) {
         existingPreview.remove();
     }
     
+    let previewHtml = '<h3>Попередній перегляд розбиття:</h3>';
+    
+    urlInfos.forEach((urlInfo, urlIndex) => {
+        previewHtml += `
+            <div class="url-info">
+                <strong>Посилання ${urlIndex + 1}:</strong> ${escapeHtml(urlInfo.url)}<br>
+                <strong>Частин:</strong> ${urlInfo.parts.length}
+                ${urlInfo.parts.map((part, partIndex) => {
+                    const globalIndex = urlInfo.startIndex + partIndex;
+                    return `<div class="url-part">${currentVariableNames[globalIndex]}: ${escapeHtml(part)}</div>`;
+                }).join('')}
+            </div>
+        `;
+    });
+    
     const preview = document.createElement('div');
     preview.className = 'url-preview';
-    preview.innerHTML = `
-        <h3>Частини URL (всього: ${parts.length}):</h3>
-        ${parts.map((part, index) => 
-            `<div class="url-part">Частина ${index + 1}: ${escapeHtml(part)}</div>`
-        ).join('')}
-    `;
+    preview.innerHTML = previewHtml;
     
     document.querySelector('.button-container').insertAdjacentElement('afterend', preview);
 }
@@ -94,58 +146,123 @@ function escapeHtml(text) {
 }
 
 // Генерація коду для C#
-function generateCSharpCode(parts) {
-    let code = '// C# Private Constants\n';
+function generateCSharpCode(allParts) {
+    let constantsCode = '';
+    let methodsCode = '';
+    let variableIndex = 0;
     
-    parts.forEach((part, index) => {
-        code += `private const string link${index + 1} = "${escapeString(part, 'csharp')}";\n`;
+    allParts.forEach((urlData, urlIndex) => {
+        const urlVariables = [];
+        
+        urlData.parts.forEach((part) => {
+            const varName = currentVariableNames[variableIndex];
+            constantsCode += `private const string ${varName} = "${escapeString(part, 'csharp')}";\n`;
+            urlVariables.push(varName);
+            variableIndex++;
+        });
+        
+        const methodName = `GetUrl${urlIndex + 1}`;
+        methodsCode += `private static string ${methodName}()\n{\n    return ${urlVariables.join(' + ')};\n}\n\n`;
     });
     
-    document.getElementById('csharp-code').textContent = code;
+    document.getElementById('csharp-constants-code').textContent = constantsCode;
+    document.getElementById('csharp-methods-code').textContent = methodsCode;
 }
 
 // Генерація коду для Dart
-function generateDartCode(parts) {
-    let code = '// Dart Private Constants\n';
+function generateDartCode(allParts) {
+    let constantsCode = '';
+    let methodsCode = '';
+    let variableIndex = 0;
     
-    parts.forEach((part, index) => {
-        code += `static const String link${index + 1} = '${escapeString(part, 'dart')}';\n`;
+    allParts.forEach((urlData, urlIndex) => {
+        const urlVariables = [];
+        
+        urlData.parts.forEach((part) => {
+            const varName = currentVariableNames[variableIndex];
+            constantsCode += `static const String ${varName} = '${escapeString(part, 'dart')}';\n`;
+            urlVariables.push(varName);
+            variableIndex++;
+        });
+        
+        const methodName = `getUrl${urlIndex + 1}`;
+        methodsCode += `static String ${methodName}() {\n  return ${urlVariables.join(' + ')};\n}\n\n`;
     });
     
-    document.getElementById('dart-code').textContent = code;
+    document.getElementById('dart-constants-code').textContent = constantsCode;
+    document.getElementById('dart-methods-code').textContent = methodsCode;
 }
 
 // Генерація коду для Swift
-function generateSwiftCode(parts) {
-    let code = '// Swift Private Constants\n';
+function generateSwiftCode(allParts) {
+    let constantsCode = '';
+    let methodsCode = '';
+    let variableIndex = 0;
     
-    parts.forEach((part, index) => {
-        code += `private static let link${index + 1} = "${escapeString(part, 'swift')}"\n`;
+    allParts.forEach((urlData, urlIndex) => {
+        const urlVariables = [];
+        
+        urlData.parts.forEach((part) => {
+            const varName = currentVariableNames[variableIndex];
+            constantsCode += `private static let ${varName} = "${escapeString(part, 'swift')}"\n`;
+            urlVariables.push(varName);
+            variableIndex++;
+        });
+        
+        const methodName = `getUrl${urlIndex + 1}`;
+        methodsCode += `private static func ${methodName}() -> String {\n    return ${urlVariables.join(' + ')}\n}\n\n`;
     });
     
-    document.getElementById('swift-code').textContent = code;
+    document.getElementById('swift-constants-code').textContent = constantsCode;
+    document.getElementById('swift-methods-code').textContent = methodsCode;
 }
 
 // Генерація коду для Java
-function generateJavaCode(parts) {
-    let code = '// Java Private Constants\n';
+function generateJavaCode(allParts) {
+    let constantsCode = '';
+    let methodsCode = '';
+    let variableIndex = 0;
     
-    parts.forEach((part, index) => {
-        code += `private static final String link${index + 1} = "${escapeString(part, 'java')}";\n`;
+    allParts.forEach((urlData, urlIndex) => {
+        const urlVariables = [];
+        
+        urlData.parts.forEach((part) => {
+            const varName = currentVariableNames[variableIndex];
+            constantsCode += `private static final String ${varName} = "${escapeString(part, 'java')}";\n`;
+            urlVariables.push(varName);
+            variableIndex++;
+        });
+        
+        const methodName = `getUrl${urlIndex + 1}`;
+        methodsCode += `private static String ${methodName}() {\n    return ${urlVariables.join(' + ')};\n}\n\n`;
     });
     
-    document.getElementById('java-code').textContent = code;
+    document.getElementById('java-constants-code').textContent = constantsCode;
+    document.getElementById('java-methods-code').textContent = methodsCode;
 }
 
 // Генерація коду для Kotlin
-function generateKotlinCode(parts) {
-    let code = '// Kotlin Private Constants\n';
+function generateKotlinCode(allParts) {
+    let constantsCode = '';
+    let methodsCode = '';
+    let variableIndex = 0;
     
-    parts.forEach((part, index) => {
-        code += `private const val link${index + 1} = "${escapeString(part, 'kotlin')}"\n`;
+    allParts.forEach((urlData, urlIndex) => {
+        const urlVariables = [];
+        
+        urlData.parts.forEach((part) => {
+            const varName = currentVariableNames[variableIndex];
+            constantsCode += `private const val ${varName} = "${escapeString(part, 'kotlin')}"\n`;
+            urlVariables.push(varName);
+            variableIndex++;
+        });
+        
+        const methodName = `getUrl${urlIndex + 1}`;
+        methodsCode += `private fun ${methodName}(): String {\n    return ${urlVariables.join(' + ')}\n}\n\n`;
     });
     
-    document.getElementById('kotlin-code').textContent = code;
+    document.getElementById('kotlin-constants-code').textContent = constantsCode;
+    document.getElementById('kotlin-methods-code').textContent = methodsCode;
 }
 
 // Екранування спеціальних символів для різних мов
@@ -164,34 +281,49 @@ function escapeString(str, language) {
     }
 }
 
-// Переключення між табами
+// Переключення між табами мов
 function showTab(language) {
-    // Приховати всі таби та контент
-    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    // Приховати всі таби мов та контент
+    document.querySelectorAll('.tab:not(.file-tab)').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.code-output').forEach(output => output.classList.remove('active'));
+    document.querySelectorAll('.file-tabs').forEach(tabs => tabs.style.display = 'none');
     
-    // Показати обраний таб
-    event.target.classList.add('active');
+    // Показати обраний таб мови
+    document.querySelector(`[onclick="showTab('${language}')"]`).classList.add('active');
     document.getElementById(language).classList.add('active');
+    document.getElementById(language + '-tabs').style.display = 'flex';
+}
+
+// Переключення між файлами
+function showFileTab(language, fileType) {
+    // Приховати всі файлові таби для цієї мови
+    document.querySelectorAll(`#${language}-tabs .file-tab`).forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll(`#${language} .file-content`).forEach(content => content.classList.remove('active'));
+    
+    // Показати обраний файловий таб
+    document.querySelector(`[onclick="showFileTab('${language}', '${fileType}')"]`).classList.add('active');
+    document.getElementById(`${language}-${fileType}`).classList.add('active');
 }
 
 // Копіювання в буфер обміну
-function copyToClipboard(language) {
-    const codeElement = document.querySelector(`#${language}-code`);
+function copyToClipboard(elementId) {
+    const codeElement = document.querySelector(`#${elementId}-code`);
     const text = codeElement.textContent;
+    
+    const button = document.querySelector(`[onclick="copyToClipboard('${elementId}')"]`);
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(text).then(() => {
-            showCopySuccess(event.target);
+            showCopySuccess(button);
         }).catch(() => {
-            fallbackCopyTextToClipboard(text, event.target);
+            fallbackCopyTextToClipboard(text, button);
         });
     } else {
-        fallbackCopyTextToClipboard(text, event.target);
+        fallbackCopyTextToClipboard(text, button);
     }
 }
 
-// Альтернативний метод копіювання (для старих браузерів)
+// Альтернативний метод копіювання
 function fallbackCopyTextToClipboard(text, button) {
     const textArea = document.createElement("textarea");
     textArea.value = text;
@@ -239,7 +371,6 @@ function showError(message) {
     errorDiv.style.display = 'block';
     document.getElementById('outputSection').style.display = 'none';
     
-    // Приховати помилку через 5 секунд
     setTimeout(hideError, 5000);
 }
 
@@ -249,36 +380,11 @@ function hideError() {
     errorDiv.style.display = 'none';
 }
 
-// Обробка подій
-document.addEventListener('DOMContentLoaded', function() {
-    // Обробка Enter у полі вводу
-    document.getElementById('urlInput').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            splitLink();
-        }
-    });
-    
-    // Автоматичне приховання помилок при введенні тексту
-    document.getElementById('urlInput').addEventListener('input', function() {
-        hideError();
-    });
-    
-    // Обробка зміни кількості частин
-    document.getElementById('partsCount').addEventListener('change', function() {
-        const outputSection = document.getElementById('outputSection');
-        if (outputSection.style.display === 'block') {
-            // Якщо результат вже показаний, оновити його
-            const url = document.getElementById('urlInput').value.trim();
-            if (url) {
-                splitLink();
-            }
-        }
-    });
-});
-
 // Функція для очищення форми
 function clearForm() {
-    document.getElementById('urlInput').value = '';
+    document.getElementById('urlInput1').value = '';
+    document.getElementById('urlInput2').value = '';
+    document.getElementById('urlInput3').value = '';
     document.getElementById('outputSection').style.display = 'none';
     hideError();
     
@@ -287,3 +393,33 @@ function clearForm() {
         preview.remove();
     }
 }
+
+// Обробка подій
+document.addEventListener('DOMContentLoaded', function() {
+    // Обробка Enter у полях вводу
+    ['urlInput1', 'urlInput2', 'urlInput3'].forEach(id => {
+        document.getElementById(id).addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                splitLinks();
+            }
+        });
+        
+        document.getElementById(id).addEventListener('input', function() {
+            hideError();
+        });
+    });
+    
+    // Обробка зміни кількості частин
+    document.getElementById('partsCount').addEventListener('change', function() {
+        const outputSection = document.getElementById('outputSection');
+        if (outputSection.style.display === 'block') {
+            // Якщо результат вже показаний, оновити його
+            const hasUrls = ['urlInput1', 'urlInput2', 'urlInput3'].some(id => 
+                document.getElementById(id).value.trim()
+            );
+            if (hasUrls) {
+                splitLinks();
+            }
+        }
+    });
+});

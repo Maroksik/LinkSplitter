@@ -3,19 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Link Splitter [GDT]</title>
+    <title>Link Splitter [GDT] V2</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>🔗 Link Splitter</h1>
+        <h1>🔗 Link Splitter V2</h1>
         
         <div class="input-section">
-            <label for="urlInput">Вставте посилання:</label>
-            <input type="url" id="urlInput" placeholder="https://example.com/path/to/resource" />
+            <div class="url-group">
+                <label for="urlInput1">Посилання 1:</label>
+                <input type="url" id="urlInput1" placeholder="https://example.com/path/to/resource1" />
+            </div>
+            
+            <div class="url-group">
+                <label for="urlInput2">Посилання 2:</label>
+                <input type="url" id="urlInput2" placeholder="https://example.com/path/to/resource2" />
+            </div>
+            
+            <div class="url-group">
+                <label for="urlInput3">Посилання 3:</label>
+                <input type="url" id="urlInput3" placeholder="https://example.com/path/to/resource3" />
+            </div>
             
             <div class="settings">
-                <label for="partsCount">Кількість частин:</label>
+                <label for="partsCount">Кількість частин на посилання:</label>
                 <select id="partsCount">
                     <option value="4">4 частини</option>
                     <option value="6">6 частин</option>
@@ -28,7 +40,8 @@
         </div>
         
         <div class="button-container">
-            <button onclick="splitLink()">Розбити посилання</button>
+            <button onclick="splitLinks()">Розбити посилання</button>
+            <button class="clear-btn" onclick="clearForm()">Очистити</button>
         </div>
         
         <div class="output-section" id="outputSection" style="display: none;">
@@ -40,29 +53,84 @@
                 <button class="tab" onclick="showTab('kotlin')">Kotlin</button>
             </div>
             
+            <div class="file-tabs" id="csharp-tabs" style="display: block;">
+                <button class="tab file-tab active" onclick="showFileTab('csharp', 'constants')">Constants.cs</button>
+                <button class="tab file-tab" onclick="showFileTab('csharp', 'methods')">UrlMethods.cs</button>
+            </div>
+            
+            <div class="file-tabs" id="dart-tabs" style="display: none;">
+                <button class="tab file-tab active" onclick="showFileTab('dart', 'constants')">constants.dart</button>
+                <button class="tab file-tab" onclick="showFileTab('dart', 'methods')">url_methods.dart</button>
+            </div>
+            
+            <div class="file-tabs" id="swift-tabs" style="display: none;">
+                <button class="tab file-tab active" onclick="showFileTab('swift', 'constants')">Constants.swift</button>
+                <button class="tab file-tab" onclick="showFileTab('swift', 'methods')">UrlMethods.swift</button>
+            </div>
+            
+            <div class="file-tabs" id="java-tabs" style="display: none;">
+                <button class="tab file-tab active" onclick="showFileTab('java', 'constants')">Constants.java</button>
+                <button class="tab file-tab" onclick="showFileTab('java', 'methods')">UrlMethods.java</button>
+            </div>
+            
+            <div class="file-tabs" id="kotlin-tabs" style="display: none;">
+                <button class="tab file-tab active" onclick="showFileTab('kotlin', 'constants')">Constants.kt</button>
+                <button class="tab file-tab" onclick="showFileTab('kotlin', 'methods')">UrlMethods.kt</button>
+            </div>
+            
             <div id="csharp" class="code-output active">
-                <button class="copy-btn" onclick="copyToClipboard('csharp')">Копіювати</button>
-                <div id="csharp-code"></div>
+                <div id="csharp-constants" class="file-content active">
+                    <button class="copy-btn" onclick="copyToClipboard('csharp-constants')">Копіювати</button>
+                    <div id="csharp-constants-code"></div>
+                </div>
+                <div id="csharp-methods" class="file-content">
+                    <button class="copy-btn" onclick="copyToClipboard('csharp-methods')">Копіювати</button>
+                    <div id="csharp-methods-code"></div>
+                </div>
             </div>
             
             <div id="dart" class="code-output">
-                <button class="copy-btn" onclick="copyToClipboard('dart')">Копіювати</button>
-                <div id="dart-code"></div>
+                <div id="dart-constants" class="file-content active">
+                    <button class="copy-btn" onclick="copyToClipboard('dart-constants')">Копіювати</button>
+                    <div id="dart-constants-code"></div>
+                </div>
+                <div id="dart-methods" class="file-content">
+                    <button class="copy-btn" onclick="copyToClipboard('dart-methods')">Копіювати</button>
+                    <div id="dart-methods-code"></div>
+                </div>
             </div>
             
             <div id="swift" class="code-output">
-                <button class="copy-btn" onclick="copyToClipboard('swift')">Копіювати</button>
-                <div id="swift-code"></div>
+                <div id="swift-constants" class="file-content active">
+                    <button class="copy-btn" onclick="copyToClipboard('swift-constants')">Копіювати</button>
+                    <div id="swift-constants-code"></div>
+                </div>
+                <div id="swift-methods" class="file-content">
+                    <button class="copy-btn" onclick="copyToClipboard('swift-methods')">Копіювати</button>
+                    <div id="swift-methods-code"></div>
+                </div>
             </div>
             
             <div id="java" class="code-output">
-                <button class="copy-btn" onclick="copyToClipboard('java')">Копіювати</button>
-                <div id="java-code"></div>
+                <div id="java-constants" class="file-content active">
+                    <button class="copy-btn" onclick="copyToClipboard('java-constants')">Копіювати</button>
+                    <div id="java-constants-code"></div>
+                </div>
+                <div id="java-methods" class="file-content">
+                    <button class="copy-btn" onclick="copyToClipboard('java-methods')">Копіювати</button>
+                    <div id="java-methods-code"></div>
+                </div>
             </div>
             
             <div id="kotlin" class="code-output">
-                <button class="copy-btn" onclick="copyToClipboard('kotlin')">Копіювати</button>
-                <div id="kotlin-code"></div>
+                <div id="kotlin-constants" class="file-content active">
+                    <button class="copy-btn" onclick="copyToClipboard('kotlin-constants')">Копіювати</button>
+                    <div id="kotlin-constants-code"></div>
+                </div>
+                <div id="kotlin-methods" class="file-content">
+                    <button class="copy-btn" onclick="copyToClipboard('kotlin-methods')">Копіювати</button>
+                    <div id="kotlin-methods-code"></div>
+                </div>
             </div>
         </div>
         
