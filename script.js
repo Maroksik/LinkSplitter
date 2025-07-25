@@ -98,7 +98,7 @@ function generateCSharpCode(parts) {
     let code = '// C# Private Constants\n';
     
     parts.forEach((part, index) => {
-        code += `private const string part${index + 1} = "${escapeString(part, 'csharp')}";\n`;
+        code += `private const string link${index + 1} = "${escapeString(part, 'csharp')}";\n`;
     });
     
     document.getElementById('csharp-code').textContent = code;
@@ -109,7 +109,7 @@ function generateDartCode(parts) {
     let code = '// Dart Private Constants\n';
     
     parts.forEach((part, index) => {
-        code += `static const String _part${index + 1} = '${escapeString(part, 'dart')}';\n`;
+        code += `static const String link${index + 1} = '${escapeString(part, 'dart')}';\n`;
     });
     
     document.getElementById('dart-code').textContent = code;
@@ -120,7 +120,7 @@ function generateSwiftCode(parts) {
     let code = '// Swift Private Constants\n';
     
     parts.forEach((part, index) => {
-        code += `private static let part${index + 1} = "${escapeString(part, 'swift')}"\n`;
+        code += `private static let link${index + 1} = "${escapeString(part, 'swift')}"\n`;
     });
     
     document.getElementById('swift-code').textContent = code;
@@ -131,7 +131,7 @@ function generateJavaCode(parts) {
     let code = '// Java Private Constants\n';
     
     parts.forEach((part, index) => {
-        code += `private static final String PART_${index + 1} = "${escapeString(part, 'java')}";\n`;
+        code += `private static final String link${index + 1} = "${escapeString(part, 'java')}";\n`;
     });
     
     document.getElementById('java-code').textContent = code;
@@ -142,7 +142,7 @@ function generateKotlinCode(parts) {
     let code = '// Kotlin Private Constants\n';
     
     parts.forEach((part, index) => {
-        code += `private const val PART_${index + 1} = "${escapeString(part, 'kotlin')}"\n`;
+        code += `private const val link${index + 1} = "${escapeString(part, 'kotlin')}"\n`;
     });
     
     document.getElementById('kotlin-code').textContent = code;
