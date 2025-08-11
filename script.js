@@ -93,17 +93,15 @@ function isValidUrl(string) {
 
 // Розбиття URL на задану кількість частин
 function splitUrlIntoParts(url, partsCount) {
-    // Перевірка і розділення 'http' або 'https'
     let protocol = '';
     if (url.startsWith('http://')) {
         protocol = 'http://';
-        url = url.slice(protocol.length); // Видаляємо 'http://'
+        url = url.slice(protocol.length);
     } else if (url.startsWith('https://')) {
         protocol = 'https://';
-        url = url.slice(protocol.length); // Видаляємо 'https://'
+        url = url.slice(protocol.length);
     }
 
-    // Розбиваємо протокол на частини (наприклад, 'http' -> ['ht', 'tp'])
     const protocolParts = protocol.slice(0, -2).split('').reduce((acc, char, index) => {
         if (index % 2 === 0) {
             acc.push(char + (protocol[index + 1] || ''));
@@ -111,12 +109,12 @@ function splitUrlIntoParts(url, partsCount) {
         return acc;
     }, []);
 
-    // Розділення решти URL на частини
+    const totalParts = partsCount - protocolParts.length;
     const length = url.length;
-    const partSize = Math.ceil(length / partsCount);
-    const parts = [...protocolParts]; // Додаємо розбитий протокол до частин
+    const partSize = Math.ceil(length / totalParts);
+    const parts = [...protocolParts];
 
-    for (let i = 0; i < partsCount; i++) {
+    for (let i = 0; i < totalParts; i++) {
         const start = i * partSize;
         const end = Math.min(start + partSize, length);
         const part = url.substring(start, end);
@@ -128,6 +126,7 @@ function splitUrlIntoParts(url, partsCount) {
 
     return parts;
 }
+
 
 
 // Показати попередній перегляд частин URL
