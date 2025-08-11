@@ -1,12 +1,13 @@
 // Список випадкових слів для назв змінних
 const randomWords = [
-    'apple', 'banana', 'cherry', 'dragon', 'eagle', 'forest', 'garden', 'honey',
-    'island', 'jungle', 'knight', 'lemon', 'magic', 'noble', 'ocean', 'palace',
-    'queen', 'river', 'stone', 'tower', 'urban', 'voice', 'water', 'xenon',
-    'yellow', 'zebra', 'brave', 'cloud', 'dream', 'flame', 'ghost', 'heart',
-    'input', 'jewel', 'karma', 'light', 'mouse', 'night', 'orbit', 'peace',
-    'quest', 'rapid', 'spark', 'trust', 'unity', 'vivid', 'world', 'youth'
+  'algorithm', 'backend', 'compiler', 'docker', 'encryption', 'framework', 'pype', 'umity',
+  'interface', 'javascript', 'kubernetes', 'library', 'microservice', 'nodejs', 'object', 'pipeline',
+  'query', 'repository', 'server', 'thread', 'unicode', 'variable', 'websocket', 'map',
+  'caml', 'zlib', 'build', 'cloud', 'devops', 'frontend', 'graphql', 'hashmap',
+  'iterator', 'barcode', 'kotlin', 'lint', 'mutex', 'namespace', 'opcode', 'promise',
+  'queue', 'runtime', 'socket', 'testing', 'unittest', 'virtualdom', 'webapp', 'yarn'
 ];
+
 
 let currentVariableNames = [];
 
@@ -161,7 +162,7 @@ function generateCSharpCode(allParts) {
             variableIndex++;
         });
         
-        const methodName = `GetUrl${urlIndex + 1}`;
+        const methodName = `ConstructPath${urlIndex + 1}`;
         methodsCode += `private static string ${methodName}()\n{\n    return ${urlVariables.join(' + ')};\n}\n\n`;
     });
     
@@ -185,7 +186,7 @@ function generateDartCode(allParts) {
             variableIndex++;
         });
         
-        const methodName = `getUrl${urlIndex + 1}`;
+        const methodName = `ConstructPath${urlIndex + 1}`;
         methodsCode += `static String ${methodName}() {\n  return ${urlVariables.join(' + ')};\n}\n\n`;
     });
     
@@ -209,7 +210,7 @@ function generateSwiftCode(allParts) {
             variableIndex++;
         });
         
-        const methodName = `getUrl${urlIndex + 1}`;
+        const methodName = `ConstructPath${urlIndex + 1}`;
         methodsCode += `private static func ${methodName}() -> String {\n    return ${urlVariables.join(' + ')}\n}\n\n`;
     });
     
@@ -233,7 +234,7 @@ function generateJavaCode(allParts) {
             variableIndex++;
         });
         
-        const methodName = `getUrl${urlIndex + 1}`;
+        const methodName = `ConstructPath${urlIndex + 1}`;
         methodsCode += `private static String ${methodName}() {\n    return ${urlVariables.join(' + ')};\n}\n\n`;
     });
     
@@ -257,7 +258,7 @@ function generateKotlinCode(allParts) {
             variableIndex++;
         });
         
-        const methodName = `getUrl${urlIndex + 1}`;
+        const methodName = `ConstructPath${urlIndex + 1}`;
         methodsCode += `private fun ${methodName}(): String {\n    return ${urlVariables.join(' + ')}\n}\n\n`;
     });
     
