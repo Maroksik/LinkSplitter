@@ -93,22 +93,42 @@ function isValidUrl(string) {
 
 // Розбиття URL на задану кількість частин
 function splitUrlIntoParts(url, partsCount) {
+    // Перевірка і розділення 'http' або 'https'
+    let protocol = '';
+    if (url.startsWith('http://')) {
+        protocol = 'http://';
+        url = url.slice(protocol.length); // Видаляємо 'http://'
+    } else if (url.startsWith('https://')) {
+        protocol = 'https://';
+        url = url.slice(protocol.length); // Видаляємо 'https://'
+    }
+
+    // Розбиваємо протокол на частини (наприклад, 'http' -> ['ht', 'tp'])
+    const protocolParts = protocol.slice(0, -2).split('').reduce((acc, char, index) => {
+        if (index % 2 === 0) {
+            acc.push(char + (protocol[index + 1] || ''));
+        }
+        return acc;
+    }, []);
+
+    // Розділення решти URL на частини
     const length = url.length;
     const partSize = Math.ceil(length / partsCount);
-    const parts = [];
-    
+    const parts = [...protocolParts]; // Додаємо розбитий протокол до частин
+
     for (let i = 0; i < partsCount; i++) {
         const start = i * partSize;
         const end = Math.min(start + partSize, length);
         const part = url.substring(start, end);
-        
+
         if (part) {
             parts.push(part);
         }
     }
-    
+
     return parts;
 }
+
 
 // Показати попередній перегляд частин URL
 function showUrlPreview(urlInfos) {
