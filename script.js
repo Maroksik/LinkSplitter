@@ -88,52 +88,44 @@ function isValidUrl(string) {
     }
 }
 
+// Кодування тексту в base64
+function encodeToBase64(text) {
+    try {
+        return btoa(unescape(encodeURIComponent(text)));
+    } catch (error) {
+        console.error('Помилка кодування в base64:', error);
+        return text; // Повертаємо оригінальний текст у випадку помилки
+    }
+}
+
 // Розбиття URL на задану кількість частин (зберігає логіку протоколу)
 function splitUrlIntoParts(url, partsCount) {
-    let protocol = '';
-    if (url.startsWith('http://')) {
-        protocol = 'http://';
-        url = url.slice(protocol.length);
-    } else if (url.startsWith('https://')) {
-        protocol = 'https://';
-        url = url.slice(protocol.length);
-    }
-
-    const protocolParts = protocol.slice(0, -1).split('').reduce((acc, char, index) => {
-        if (index % 2 === 0) {
-            acc.push(char + (protocol[index + 1] || ''));
-        }
-        return acc;
-    }, []);
-
-    const totalParts = partsCount - protocolParts.length;
-    const length = url.length;
-    const partSize = Math.ceil(length / totalParts);
-    const parts = [...protocolParts];
-
-    for (let i = 0; i < totalParts; i++) {
-        const start = i * partSize;
-        const end = Math.min(start + partSize, length);
-        const part = url.substring(start, end);
-
-        if (part) {
-            parts.push(part);
-        }
-    }
-
-    return parts;
+    // Спочатку кодуємо URL в base64
+    const encodedUrl = encodeToBase64(url);
+    
+    // Розбиваємо закодований URL на рівні частини
+    return splitEncodedTextIntoParts(encodedUrl, partsCount);
 }
 
 // Розбиття звичайного тексту на рівні частини
 function splitTextIntoParts(text, partsCount) {
-    const length = text.length;
+    // Спочатку кодуємо текст в base64
+    const encodedText = encodeToBase64(text);
+    
+    // Розбиваємо закодований текст на рівні частини
+    return splitEncodedTextIntoParts(encodedText, partsCount);
+}
+
+// Розбиття закодованого тексту на рівні частини
+function splitEncodedTextIntoParts(encodedText, partsCount) {
+    const length = encodedText.length;
     const partSize = Math.ceil(length / partsCount);
     const parts = [];
 
     for (let i = 0; i < partsCount; i++) {
         const start = i * partSize;
         const end = Math.min(start + partSize, length);
-        const part = text.substring(start, end);
+        const part = encodedText.substring(start, end);
 
         if (part) {
             parts.push(part);
@@ -154,13 +146,16 @@ function showInputPreview(inputInfos) {
     
     inputInfos.forEach((inputInfo, inputIndex) => {
         const typeLabel = inputInfo.isUrl ? 'URL' : 'Текст';
+        const encodedText = encodeToBase64(inputInfo.text);
+        
         previewHtml += `
             <div class="url-info">
                 <strong>${typeLabel} ${inputIndex + 1}:</strong> ${escapeHtml(inputInfo.text)}<br>
+                <strong>Base64:</strong> <span style="font-family: monospace; word-break: break-all;">${escapeHtml(encodedText)}</span><br>
                 <strong>Частин:</strong> ${inputInfo.parts.length}
                 ${inputInfo.parts.map((part, partIndex) => {
                     const globalIndex = inputInfo.startIndex + partIndex;
-                    return `<div class="url-part">${currentVariableNames[globalIndex]}: ${escapeHtml(part)}</div>`;
+                    return `<div class="url-part">${currentVariableNames[globalIndex]}: <span style="font-family: monospace;">${escapeHtml(part)}</span></div>`;
                 }).join('')}
             </div>
         `;
@@ -197,7 +192,7 @@ function generateCSharpCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `private static string ${methodName}()\n{\n    return ${inputVariables.join(' + ')};\n}\n\n`;
+        methodsCode += `private static string ${methodName}()\n{\n    return ${inputVariables.join(' + ')};\n}\n\nprivate static string Decode${inputIndex + 1}()\n{\n    return System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(${methodName}()));\n}\n\n`;
     });
     
     document.getElementById('csharp-constants-code').textContent = constantsCode;
@@ -210,6 +205,9 @@ function generateDartCode(allParts) {
     let methodsCode = '';
     let variableIndex = 0;
     
+    // Додаємо необхідні імпорти
+    constantsCode += `import 'dart:convert';\n\n`;
+    
     allParts.forEach((inputData, inputIndex) => {
         const inputVariables = [];
         
@@ -221,7 +219,7 @@ function generateDartCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `static String ${methodName}() {\n  return ${inputVariables.join(' + ')};\n}\n\n`;
+        methodsCode += `static String ${methodName}() {\n  return ${inputVariables.join(' + ')};\n}\n\nstatic String decode${inputIndex + 1}() {\n  return utf8.decode(base64.decode(${methodName}()));\n}\n\n`;
     });
     
     document.getElementById('dart-constants-code').textContent = constantsCode;
@@ -245,7 +243,7 @@ function generateSwiftCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `private static func ${methodName}() -> String {\n    return ${inputVariables.join(' + ')}\n}\n\n`;
+        methodsCode += `private static func ${methodName}() -> String {\n    return ${inputVariables.join(' + ')}\n}\n\nprivate static func decode${inputIndex + 1}() -> String {\n    guard let data = Data(base64Encoded: ${methodName}()) else { return "" }\n    return String(data: data, encoding: .utf8) ?? ""\n}\n\n`;
     });
     
     document.getElementById('swift-constants-code').textContent = constantsCode;
@@ -269,7 +267,7 @@ function generateJavaCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `private static String ${methodName}() {\n    return ${inputVariables.join(' + ')};\n}\n\n`;
+        methodsCode += `private static String ${methodName}() {\n    return ${inputVariables.join(' + ')};\n}\n\nprivate static String decode${inputIndex + 1}() {\n    return new String(java.util.Base64.getDecoder().decode(${methodName}()), java.nio.charset.StandardCharsets.UTF_8);\n}\n\n`;
     });
     
     document.getElementById('java-constants-code').textContent = constantsCode;
@@ -293,7 +291,7 @@ function generateKotlinCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `private fun ${methodName}(): String {\n    return ${inputVariables.join(' + ')}\n}\n\n`;
+        methodsCode += `private fun ${methodName}(): String {\n    return ${inputVariables.join(' + ')}\n}\n\nprivate fun decode${inputIndex + 1}(): String {\n    return String(android.util.Base64.decode(${methodName}(), android.util.Base64.DEFAULT))\n}\n\n`;
     });
     
     document.getElementById('kotlin-constants-code').textContent = constantsCode;
