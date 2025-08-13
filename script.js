@@ -8,7 +8,6 @@ const randomWords = [
   'queue', 'runtime', 'socket', 'testing', 'unittest', 'virtualdom', 'webapp', 'yarn'
 ];
 
-
 let currentVariableNames = [];
 
 // Генерація унікальних випадкових назв змінних
@@ -17,13 +16,13 @@ function generateRandomVariableNames(count) {
     return shuffled.slice(0, count);
 }
 
-// Основна функція для розбиття посилань
+// Основна функція для розбиття посилань/тексту
 function splitLinks() {
-    const urls = [
+    const inputs = [
         document.getElementById('urlInput1').value.trim(),
         document.getElementById('urlInput2').value.trim(),
         document.getElementById('urlInput3').value.trim()
-    ].filter(url => url);
+    ].filter(input => input);
 
     const partsCount = parseInt(document.getElementById('partsCount').value);
     const errorDiv = document.getElementById('error');
@@ -31,44 +30,42 @@ function splitLinks() {
     
     hideError();
     
-    if (urls.length === 0) {
-        showError('Будь ласка, введіть хоча б одне посилання');
+    if (inputs.length === 0) {
+        showError('Будь ласка, введіть хоча б один текст або посилання');
         return;
     }
     
-    // Перевірка валідності всіх URL
-    for (let i = 0; i < urls.length; i++) {
-        if (!isValidUrl(urls[i])) {
-            showError(`Посилання ${i + 1} невалідне (має починатися з http:// або https://)`);
-            return;
-        }
-    }
-    
     // Генеруємо назви змінних
-    const totalParts = urls.length * partsCount;
+    const totalParts = inputs.length * partsCount;
     currentVariableNames = generateRandomVariableNames(totalParts);
     
-    // Розбиваємо кожен URL на частини
+    // Розбиваємо кожен вхідний текст на частини
     const allParts = [];
-    const urlInfos = [];
+    const inputInfos = [];
     
-    urls.forEach((url, urlIndex) => {
-        const parts = splitUrlIntoParts(url, partsCount);
+    inputs.forEach((input, inputIndex) => {
+        const isUrl = isValidUrl(input);
+        const parts = isUrl ? 
+            splitUrlIntoParts(input, partsCount) : 
+            splitTextIntoParts(input, partsCount);
+        
         allParts.push({
-            url: url,
-            urlIndex: urlIndex,
-            parts: parts
+            text: input,
+            inputIndex: inputIndex,
+            parts: parts,
+            isUrl: isUrl
         });
         
-        urlInfos.push({
-            url: url,
+        inputInfos.push({
+            text: input,
             parts: parts,
-            startIndex: urlIndex * partsCount
+            startIndex: inputIndex * partsCount,
+            isUrl: isUrl
         });
     });
     
     // Показуємо попередній перегляд
-    showUrlPreview(urlInfos);
+    showInputPreview(inputInfos);
     
     // Генеруємо код для кожної мови
     generateCSharpCode(allParts);
@@ -91,7 +88,7 @@ function isValidUrl(string) {
     }
 }
 
-// Розбиття URL на задану кількість частин
+// Розбиття URL на задану кількість частин (зберігає логіку протоколу)
 function splitUrlIntoParts(url, partsCount) {
     let protocol = '';
     if (url.startsWith('http://')) {
@@ -102,7 +99,7 @@ function splitUrlIntoParts(url, partsCount) {
         url = url.slice(protocol.length);
     }
 
-    const protocolParts = protocol.slice(0, -2).split('').reduce((acc, char, index) => {
+    const protocolParts = protocol.slice(0, -1).split('').reduce((acc, char, index) => {
         if (index % 2 === 0) {
             acc.push(char + (protocol[index + 1] || ''));
         }
@@ -127,10 +124,27 @@ function splitUrlIntoParts(url, partsCount) {
     return parts;
 }
 
+// Розбиття звичайного тексту на рівні частини
+function splitTextIntoParts(text, partsCount) {
+    const length = text.length;
+    const partSize = Math.ceil(length / partsCount);
+    const parts = [];
 
+    for (let i = 0; i < partsCount; i++) {
+        const start = i * partSize;
+        const end = Math.min(start + partSize, length);
+        const part = text.substring(start, end);
 
-// Показати попередній перегляд частин URL
-function showUrlPreview(urlInfos) {
+        if (part) {
+            parts.push(part);
+        }
+    }
+
+    return parts;
+}
+
+// Показати попередній перегляд частин
+function showInputPreview(inputInfos) {
     const existingPreview = document.querySelector('.url-preview');
     if (existingPreview) {
         existingPreview.remove();
@@ -138,13 +152,14 @@ function showUrlPreview(urlInfos) {
     
     let previewHtml = '<h3>Попередній перегляд розбиття:</h3>';
     
-    urlInfos.forEach((urlInfo, urlIndex) => {
+    inputInfos.forEach((inputInfo, inputIndex) => {
+        const typeLabel = inputInfo.isUrl ? 'URL' : 'Текст';
         previewHtml += `
             <div class="url-info">
-                <strong>Посилання ${urlIndex + 1}:</strong> ${escapeHtml(urlInfo.url)}<br>
-                <strong>Частин:</strong> ${urlInfo.parts.length}
-                ${urlInfo.parts.map((part, partIndex) => {
-                    const globalIndex = urlInfo.startIndex + partIndex;
+                <strong>${typeLabel} ${inputIndex + 1}:</strong> ${escapeHtml(inputInfo.text)}<br>
+                <strong>Частин:</strong> ${inputInfo.parts.length}
+                ${inputInfo.parts.map((part, partIndex) => {
+                    const globalIndex = inputInfo.startIndex + partIndex;
                     return `<div class="url-part">${currentVariableNames[globalIndex]}: ${escapeHtml(part)}</div>`;
                 }).join('')}
             </div>
@@ -171,18 +186,18 @@ function generateCSharpCode(allParts) {
     let methodsCode = '';
     let variableIndex = 0;
     
-    allParts.forEach((urlData, urlIndex) => {
-        const urlVariables = [];
+    allParts.forEach((inputData, inputIndex) => {
+        const inputVariables = [];
         
-        urlData.parts.forEach((part) => {
+        inputData.parts.forEach((part) => {
             const varName = currentVariableNames[variableIndex];
             constantsCode += `private const string ${varName} = "${escapeString(part, 'csharp')}";\n`;
-            urlVariables.push(varName);
+            inputVariables.push(varName);
             variableIndex++;
         });
         
-        const methodName = `ConstructPath${urlIndex + 1}`;
-        methodsCode += `private static string ${methodName}()\n{\n    return ${urlVariables.join(' + ')};\n}\n\n`;
+        const methodName = `ConstructPath${inputIndex + 1}`;
+        methodsCode += `private static string ${methodName}()\n{\n    return ${inputVariables.join(' + ')};\n}\n\n`;
     });
     
     document.getElementById('csharp-constants-code').textContent = constantsCode;
@@ -195,18 +210,18 @@ function generateDartCode(allParts) {
     let methodsCode = '';
     let variableIndex = 0;
     
-    allParts.forEach((urlData, urlIndex) => {
-        const urlVariables = [];
+    allParts.forEach((inputData, inputIndex) => {
+        const inputVariables = [];
         
-        urlData.parts.forEach((part) => {
+        inputData.parts.forEach((part) => {
             const varName = currentVariableNames[variableIndex];
             constantsCode += `static const String ${varName} = '${escapeString(part, 'dart')}';\n`;
-            urlVariables.push(varName);
+            inputVariables.push(varName);
             variableIndex++;
         });
         
-        const methodName = `ConstructPath${urlIndex + 1}`;
-        methodsCode += `static String ${methodName}() {\n  return ${urlVariables.join(' + ')};\n}\n\n`;
+        const methodName = `ConstructPath${inputIndex + 1}`;
+        methodsCode += `static String ${methodName}() {\n  return ${inputVariables.join(' + ')};\n}\n\n`;
     });
     
     document.getElementById('dart-constants-code').textContent = constantsCode;
@@ -219,18 +234,18 @@ function generateSwiftCode(allParts) {
     let methodsCode = '';
     let variableIndex = 0;
     
-    allParts.forEach((urlData, urlIndex) => {
-        const urlVariables = [];
+    allParts.forEach((inputData, inputIndex) => {
+        const inputVariables = [];
         
-        urlData.parts.forEach((part) => {
+        inputData.parts.forEach((part) => {
             const varName = currentVariableNames[variableIndex];
             constantsCode += `private static let ${varName} = "${escapeString(part, 'swift')}"\n`;
-            urlVariables.push(varName);
+            inputVariables.push(varName);
             variableIndex++;
         });
         
-        const methodName = `ConstructPath${urlIndex + 1}`;
-        methodsCode += `private static func ${methodName}() -> String {\n    return ${urlVariables.join(' + ')}\n}\n\n`;
+        const methodName = `ConstructPath${inputIndex + 1}`;
+        methodsCode += `private static func ${methodName}() -> String {\n    return ${inputVariables.join(' + ')}\n}\n\n`;
     });
     
     document.getElementById('swift-constants-code').textContent = constantsCode;
@@ -243,18 +258,18 @@ function generateJavaCode(allParts) {
     let methodsCode = '';
     let variableIndex = 0;
     
-    allParts.forEach((urlData, urlIndex) => {
-        const urlVariables = [];
+    allParts.forEach((inputData, inputIndex) => {
+        const inputVariables = [];
         
-        urlData.parts.forEach((part) => {
+        inputData.parts.forEach((part) => {
             const varName = currentVariableNames[variableIndex];
             constantsCode += `private static final String ${varName} = "${escapeString(part, 'java')}";\n`;
-            urlVariables.push(varName);
+            inputVariables.push(varName);
             variableIndex++;
         });
         
-        const methodName = `ConstructPath${urlIndex + 1}`;
-        methodsCode += `private static String ${methodName}() {\n    return ${urlVariables.join(' + ')};\n}\n\n`;
+        const methodName = `ConstructPath${inputIndex + 1}`;
+        methodsCode += `private static String ${methodName}() {\n    return ${inputVariables.join(' + ')};\n}\n\n`;
     });
     
     document.getElementById('java-constants-code').textContent = constantsCode;
@@ -267,18 +282,18 @@ function generateKotlinCode(allParts) {
     let methodsCode = '';
     let variableIndex = 0;
     
-    allParts.forEach((urlData, urlIndex) => {
-        const urlVariables = [];
+    allParts.forEach((inputData, inputIndex) => {
+        const inputVariables = [];
         
-        urlData.parts.forEach((part) => {
+        inputData.parts.forEach((part) => {
             const varName = currentVariableNames[variableIndex];
             constantsCode += `private const val ${varName} = "${escapeString(part, 'kotlin')}"\n`;
-            urlVariables.push(varName);
+            inputVariables.push(varName);
             variableIndex++;
         });
         
-        const methodName = `ConstructPath${urlIndex + 1}`;
-        methodsCode += `private fun ${methodName}(): String {\n    return ${urlVariables.join(' + ')}\n}\n\n`;
+        const methodName = `ConstructPath${inputIndex + 1}`;
+        methodsCode += `private fun ${methodName}(): String {\n    return ${inputVariables.join(' + ')}\n}\n\n`;
     });
     
     document.getElementById('kotlin-constants-code').textContent = constantsCode;
@@ -434,10 +449,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const outputSection = document.getElementById('outputSection');
         if (outputSection.style.display === 'block') {
             // Якщо результат вже показаний, оновити його
-            const hasUrls = ['urlInput1', 'urlInput2', 'urlInput3'].some(id => 
+            const hasInputs = ['urlInput1', 'urlInput2', 'urlInput3'].some(id => 
                 document.getElementById(id).value.trim()
             );
-            if (hasUrls) {
+            if (hasInputs) {
                 splitLinks();
             }
         }
