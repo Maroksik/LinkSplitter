@@ -98,34 +98,60 @@ function encodeToBase64(text) {
     }
 }
 
-// Розбиття URL на задану кількість частин (зберігає логіку протоколу)
-function splitUrlIntoParts(url, partsCount) {
-    // Спочатку кодуємо URL в base64
-    const encodedUrl = encodeToBase64(url);
+// Шифрування шифром Цезаря
+function caesarCipher(text, shift) {
+    return text.replace(/[a-zA-Z]/g, function(char) {
+        const start = char <= 'Z' ? 65 : 97;
+        const code = char.charCodeAt(0);
+        let shifted = ((code - start + shift) % 26) + start;
+        return String.fromCharCode(shifted);
+    });
+}
+
+// Обробка тексту згідно з обраними налаштуваннями
+function processText(text) {
+    let processedText = text;
     
-    // Розбиваємо закодований URL на рівні частини
-    return splitEncodedTextIntoParts(encodedUrl, partsCount);
+    // Крок 1: Розбиття на частини відбувається пізніше
+    
+    // Крок 2: Кодування в Base64 (якщо увімкнено)
+    const enableBase64 = document.getElementById('enableBase64').checked;
+    if (enableBase64) {
+        processedText = encodeToBase64(processedText);
+    }
+    
+    // Крок 3: Шифрування Цезарем (якщо увімкнено)
+    const enableCaesar = document.getElementById('enableCaesar').checked;
+    if (enableCaesar) {
+        const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+        processedText = caesarCipher(processedText, shift);
+    }
+    
+    return processedText;
+}
+
+// Розбиття URL на задану кількість частин
+function splitUrlIntoParts(url, partsCount) {
+    const processedUrl = processText(url);
+    return splitProcessedTextIntoParts(processedUrl, partsCount);
 }
 
 // Розбиття звичайного тексту на рівні частини
 function splitTextIntoParts(text, partsCount) {
-    // Спочатку кодуємо текст в base64
-    const encodedText = encodeToBase64(text);
-    
-    // Розбиваємо закодований текст на рівні частини
-    return splitEncodedTextIntoParts(encodedText, partsCount);
+    const processedText = processText(text);
+    return splitProcessedTextIntoParts(processedText, partsCount);
 }
 
-// Розбиття закодованого тексту на рівні частини
-function splitEncodedTextIntoParts(encodedText, partsCount) {
-    const length = encodedText.length;
+// Розбиття обробленого тексту на рівні частини
+function splitProcessedTextIntoParts(processedText, partsCount) {
+    const length = processedText.length;
     const partSize = Math.ceil(length / partsCount);
     const parts = [];
 
     for (let i = 0; i < partsCount; i++) {
         const start = i * partSize;
         const end = Math.min(start + partSize, length);
-        const part = encodedText.substring(start, end);
+        const part = processedText.substring(start, end);
 
         if (part) {
             parts.push(part);
@@ -146,12 +172,33 @@ function showInputPreview(inputInfos) {
     
     inputInfos.forEach((inputInfo, inputIndex) => {
         const typeLabel = inputInfo.isUrl ? 'URL' : 'Текст';
-        const encodedText = encodeToBase64(inputInfo.text);
+        const processedText = processText(inputInfo.text);
+        
+        let processingSteps = `<strong>Оригінал:</strong> ${escapeHtml(inputInfo.text)}<br>`;
+        
+        // Показуємо кроки обробки
+        const enableBase64 = document.getElementById('enableBase64').checked;
+        const enableCaesar = document.getElementById('enableCaesar').checked;
+        
+        if (enableBase64 || enableCaesar) {
+            let tempText = inputInfo.text;
+            
+            if (enableBase64) {
+                tempText = encodeToBase64(tempText);
+                processingSteps += `<strong>Base64:</strong> <span style="font-family: monospace; word-break: break-all;">${escapeHtml(tempText)}</span><br>`;
+            }
+            
+            if (enableCaesar) {
+                const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+                tempText = caesarCipher(tempText, shift);
+                processingSteps += `<strong>Цезар (зсув ${shift}):</strong> <span style="font-family: monospace; word-break: break-all;">${escapeHtml(tempText)}</span><br>`;
+            }
+        }
         
         previewHtml += `
             <div class="url-info">
-                <strong>${typeLabel} ${inputIndex + 1}:</strong> ${escapeHtml(inputInfo.text)}<br>
-                <strong>Base64:</strong> <span style="font-family: monospace; word-break: break-all;">${escapeHtml(encodedText)}</span><br>
+                <strong>${typeLabel} ${inputIndex + 1}:</strong><br>
+                ${processingSteps}
                 <strong>Частин:</strong> ${inputInfo.parts.length}
                 ${inputInfo.parts.map((part, partIndex) => {
                     const globalIndex = inputInfo.startIndex + partIndex;
@@ -192,7 +239,27 @@ function generateCSharpCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `private static string ${methodName}()\n{\n    return ${inputVariables.join(' + ')};\n}\n\nprivate static string Decode${inputIndex + 1}()\n{\n    return System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(${methodName}()));\n}\n\n`;
+        methodsCode += `private static string ${methodName}()\n{\n    return ${inputVariables.join(' + ')};\n}\n\nprivate static string Decode${inputIndex + 1}()\n{\n    string reconstructed = ${methodName}();\n`;
+        
+        // Додаємо декодування залежно від увімкнених опцій
+        const enableCaesar = document.getElementById('enableCaesar').checked;
+        const enableBase64 = document.getElementById('enableBase64').checked;
+        
+        if (enableCaesar) {
+            const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+            methodsCode += `    // Дешифрування Цезаря\n    reconstructed = CaesarDecipher(reconstructed, ${shift});\n`;
+        }
+        
+        if (enableBase64) {
+            methodsCode += `    // Декодування Base64\n    reconstructed = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(reconstructed));\n`;
+        }
+        
+        methodsCode += `    return reconstructed;\n}\n\n`;
+        
+        // Додаємо метод для дешифрування Цезаря, якщо потрібно
+        if (enableCaesar && inputIndex === 0) {
+            methodsCode += `private static string CaesarDecipher(string text, int shift)\n{\n    return new string(text.Select(ch => char.IsLetter(ch) ? \n        (char)(((ch <= 'Z' ? ch - 'A' : ch - 'a') - shift + 26) % 26 + (ch <= 'Z' ? 'A' : 'a')) : ch).ToArray());\n}\n\n`;
+        }
     });
     
     document.getElementById('csharp-constants-code').textContent = constantsCode;
@@ -219,7 +286,27 @@ function generateDartCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `static String ${methodName}() {\n  return ${inputVariables.join(' + ')};\n}\n\nstatic String decode${inputIndex + 1}() {\n  return utf8.decode(base64.decode(${methodName}()));\n}\n\n`;
+        methodsCode += `static String ${methodName}() {\n  return ${inputVariables.join(' + ')};\n}\n\nstatic String decode${inputIndex + 1}() {\n  String reconstructed = ${methodName}();\n`;
+        
+        // Додаємо декодування залежно від увімкнених опцій
+        const enableCaesar = document.getElementById('enableCaesar').checked;
+        const enableBase64 = document.getElementById('enableBase64').checked;
+        
+        if (enableCaesar) {
+            const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+            methodsCode += `  // Дешифрування Цезаря\n  reconstructed = caesarDecipher(reconstructed, ${shift});\n`;
+        }
+        
+        if (enableBase64) {
+            methodsCode += `  // Декодування Base64\n  reconstructed = utf8.decode(base64.decode(reconstructed));\n`;
+        }
+        
+        methodsCode += `  return reconstructed;\n}\n\n`;
+        
+        // Додаємо метод для дешифрування Цезаря, якщо потрібно
+        if (enableCaesar && inputIndex === 0) {
+            methodsCode += `static String caesarDecipher(String text, int shift) {\n  return text.split('').map((char) {\n    if (char.codeUnitAt(0) >= 65 && char.codeUnitAt(0) <= 90) {\n      return String.fromCharCode(((char.codeUnitAt(0) - 65 - shift + 26) % 26) + 65);\n    } else if (char.codeUnitAt(0) >= 97 && char.codeUnitAt(0) <= 122) {\n      return String.fromCharCode(((char.codeUnitAt(0) - 97 - shift + 26) % 26) + 97);\n    }\n    return char;\n  }).join('');\n}\n\n`;
+        }
     });
     
     document.getElementById('dart-constants-code').textContent = constantsCode;
@@ -243,7 +330,27 @@ function generateSwiftCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `private static func ${methodName}() -> String {\n    return ${inputVariables.join(' + ')}\n}\n\nprivate static func decode${inputIndex + 1}() -> String {\n    guard let data = Data(base64Encoded: ${methodName}()) else { return "" }\n    return String(data: data, encoding: .utf8) ?? ""\n}\n\n`;
+        methodsCode += `private static func ${methodName}() -> String {\n    return ${inputVariables.join(' + ')}\n}\n\nprivate static func decode${inputIndex + 1}() -> String {\n    var reconstructed = ${methodName}()\n`;
+        
+        // Додаємо декодування залежно від увімкнених опцій
+        const enableCaesar = document.getElementById('enableCaesar').checked;
+        const enableBase64 = document.getElementById('enableBase64').checked;
+        
+        if (enableCaesar) {
+            const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+            methodsCode += `    // Дешифрування Цезаря\n    reconstructed = caesarDecipher(reconstructed, shift: ${shift})\n`;
+        }
+        
+        if (enableBase64) {
+            methodsCode += `    // Декодування Base64\n    guard let data = Data(base64Encoded: reconstructed) else { return "" }\n    reconstructed = String(data: data, encoding: .utf8) ?? ""\n`;
+        }
+        
+        methodsCode += `    return reconstructed\n}\n\n`;
+        
+        // Додаємо метод для дешифрування Цезаря, якщо потрібно
+        if (enableCaesar && inputIndex === 0) {
+            methodsCode += `private static func caesarDecipher(_ text: String, shift: Int) -> String {\n    return String(text.map { char in\n        if char.isLetter {\n            let base = char.isUppercase ? 65 : 97\n            let shifted = ((Int(char.asciiValue!) - base - shift + 26) % 26) + base\n            return Character(UnicodeScalar(shifted)!)\n        }\n        return char\n    })\n}\n\n`;
+        }
     });
     
     document.getElementById('swift-constants-code').textContent = constantsCode;
@@ -267,7 +374,27 @@ function generateJavaCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `private static String ${methodName}() {\n    return ${inputVariables.join(' + ')};\n}\n\nprivate static String decode${inputIndex + 1}() {\n    return new String(java.util.Base64.getDecoder().decode(${methodName}()), java.nio.charset.StandardCharsets.UTF_8);\n}\n\n`;
+        methodsCode += `private static String ${methodName}() {\n    return ${inputVariables.join(' + ')};\n}\n\nprivate static String decode${inputIndex + 1}() {\n    String reconstructed = ${methodName}();\n`;
+        
+        // Додаємо декодування залежно від увімкнених опцій
+        const enableCaesar = document.getElementById('enableCaesar').checked;
+        const enableBase64 = document.getElementById('enableBase64').checked;
+        
+        if (enableCaesar) {
+            const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+            methodsCode += `    // Дешифрування Цезаря\n    reconstructed = caesarDecipher(reconstructed, ${shift});\n`;
+        }
+        
+        if (enableBase64) {
+            methodsCode += `    // Декодування Base64\n    reconstructed = new String(java.util.Base64.getDecoder().decode(reconstructed), java.nio.charset.StandardCharsets.UTF_8);\n`;
+        }
+        
+        methodsCode += `    return reconstructed;\n}\n\n`;
+        
+        // Додаємо метод для дешифрування Цезаря, якщо потрібно
+        if (enableCaesar && inputIndex === 0) {
+            methodsCode += `private static String caesarDecipher(String text, int shift) {\n    StringBuilder result = new StringBuilder();\n    for (char c : text.toCharArray()) {\n        if (Character.isLetter(c)) {\n            int base = Character.isUpperCase(c) ? 65 : 97;\n            result.append((char) (((c - base - shift + 26) % 26) + base));\n        } else {\n            result.append(c);\n        }\n    }\n    return result.toString();\n}\n\n`;
+        }
     });
     
     document.getElementById('java-constants-code').textContent = constantsCode;
@@ -291,7 +418,27 @@ function generateKotlinCode(allParts) {
         });
         
         const methodName = `ConstructPath${inputIndex + 1}`;
-        methodsCode += `private fun ${methodName}(): String {\n    return ${inputVariables.join(' + ')}\n}\n\nprivate fun decode${inputIndex + 1}(): String {\n    return String(android.util.Base64.decode(${methodName}(), android.util.Base64.DEFAULT))\n}\n\n`;
+        methodsCode += `private fun ${methodName}(): String {\n    return ${inputVariables.join(' + ')}\n}\n\nprivate fun decode${inputIndex + 1}(): String {\n    var reconstructed = ${methodName}()\n`;
+        
+        // Додаємо декодування залежно від увімкнених опцій
+        const enableCaesar = document.getElementById('enableCaesar').checked;
+        const enableBase64 = document.getElementById('enableBase64').checked;
+        
+        if (enableCaesar) {
+            const shift = parseInt(document.getElementById('caesarShift').value) || 3;
+            methodsCode += `    // Дешифрування Цезаря\n    reconstructed = caesarDecipher(reconstructed, ${shift})\n`;
+        }
+        
+        if (enableBase64) {
+            methodsCode += `    // Декодування Base64\n    reconstructed = String(android.util.Base64.decode(reconstructed, android.util.Base64.DEFAULT))\n`;
+        }
+        
+        methodsCode += `    return reconstructed\n}\n\n`;
+        
+        // Додаємо метод для дешифрування Цезаря, якщо потрібно
+        if (enableCaesar && inputIndex === 0) {
+            methodsCode += `private fun caesarDecipher(text: String, shift: Int): String {\n    return text.map { char ->\n        when {\n            char.isLetter() -> {\n                val base = if (char.isUpperCase()) 65 else 97\n                ((char.toInt() - base - shift + 26) % 26 + base).toChar()\n            }\n            else -> char\n        }\n    }.joinToString("")\n}\n\n`;
+        }
     });
     
     document.getElementById('kotlin-constants-code').textContent = constantsCode;
@@ -447,6 +594,49 @@ document.addEventListener('DOMContentLoaded', function() {
         const outputSection = document.getElementById('outputSection');
         if (outputSection.style.display === 'block') {
             // Якщо результат вже показаний, оновити його
+            const hasInputs = ['urlInput1', 'urlInput2', 'urlInput3'].some(id => 
+                document.getElementById(id).value.trim()
+            );
+            if (hasInputs) {
+                splitLinks();
+            }
+        }
+    });
+    
+    // Обробка зміни налаштувань шифрування
+    document.getElementById('enableCaesar').addEventListener('change', function() {
+        const caesarSettings = document.getElementById('caesarSettings');
+        caesarSettings.style.display = this.checked ? 'block' : 'none';
+        
+        // Оновити результат, якщо він вже показаний
+        const outputSection = document.getElementById('outputSection');
+        if (outputSection.style.display === 'block') {
+            const hasInputs = ['urlInput1', 'urlInput2', 'urlInput3'].some(id => 
+                document.getElementById(id).value.trim()
+            );
+            if (hasInputs) {
+                splitLinks();
+            }
+        }
+    });
+    
+    // Обробка зміни Base64 кодування
+    document.getElementById('enableBase64').addEventListener('change', function() {
+        const outputSection = document.getElementById('outputSection');
+        if (outputSection.style.display === 'block') {
+            const hasInputs = ['urlInput1', 'urlInput2', 'urlInput3'].some(id => 
+                document.getElementById(id).value.trim()
+            );
+            if (hasInputs) {
+                splitLinks();
+            }
+        }
+    });
+    
+    // Обробка зміни зсуву Цезаря
+    document.getElementById('caesarShift').addEventListener('input', function() {
+        const outputSection = document.getElementById('outputSection');
+        if (outputSection.style.display === 'block') {
             const hasInputs = ['urlInput1', 'urlInput2', 'urlInput3'].some(id => 
                 document.getElementById(id).value.trim()
             );
